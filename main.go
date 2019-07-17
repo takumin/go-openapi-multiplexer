@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/json-iterator/go"
@@ -37,13 +38,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	rootPath, err := filepath.Abs(rootDir)
+	rootPath, err := filepath.Abs(filepath.Clean(rootDir))
 	if err != nil {
 		fmt.Printf("%+v", errors.Wrap(err, ""))
 		os.Exit(1)
 	}
 
-	filePath, err := filepath.Abs(flag.Args()[0])
+	filePath, err := filepath.Abs(filepath.Clean(flag.Args()[0]))
 	if err != nil {
 		fmt.Printf("%+v", errors.Wrap(err, ""))
 		os.Exit(1)
@@ -121,7 +122,7 @@ func main() {
 
 	showInfo(openapi)
 
-	for path, pathItem := range openapi.Paths {
+	for pathKey, pathItem := range openapi.Paths {
 		for k, v := range pathItem.ExtensionProps.Extensions {
 			if k == "$ref" {
 				str, err := json.MarshalToString(v)
@@ -130,7 +131,25 @@ func main() {
 					os.Exit(1)
 				}
 
-				log.Println(path, k, str)
+				file, err := strconv.Unquote(str)
+				if err != nil {
+					fmt.Printf("%+v", errors.Wrap(err, ""))
+					os.Exit(1)
+				}
+
+				var path string
+				if filepath.IsAbs(file) {
+					path = file
+				} else {
+					path = filepath.Join(rootPath, filepath.Clean(file))
+				}
+
+				if _, err := os.Stat(path); os.IsNotExist(err) {
+					fmt.Printf("%+v", errors.Wrap(err, ""))
+					os.Exit(1)
+				}
+
+				log.Println(pathKey, k, path)
 			}
 		}
 	}
