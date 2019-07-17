@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/url"
 	"os"
 	"path/filepath"
 
@@ -19,13 +20,13 @@ func main() {
 		rootDir string
 	)
 
-	workDir, err := os.Getwd()
+	rootDir, err := os.Getwd()
 	if err != nil {
 		fmt.Printf("%+v", errors.Wrap(err, ""))
 		os.Exit(1)
 	}
 
-	flag.StringVar(&rootDir, "rootDir", workDir, "Root directory when reading OpenAPI file")
+	flag.StringVar(&rootDir, "rootDir", rootDir, "Root directory when reading OpenAPI file")
 	flag.Parse()
 
 	if len(flag.Args()) != 1 {
@@ -33,9 +34,24 @@ func main() {
 		os.Exit(1)
 	}
 
-	filePath := flag.Args()[0]
+	rootPath, err := filepath.Abs(rootDir)
+	if err != nil {
+		fmt.Printf("%+v", errors.Wrap(err, ""))
+		os.Exit(1)
+	}
 
-	if _, err := os.Stat(filePath); err != nil {
+	filePath, err := filepath.Abs(flag.Args()[0])
+	if err != nil {
+		fmt.Printf("%+v", errors.Wrap(err, ""))
+		os.Exit(1)
+	}
+
+	if _, err := os.Stat(rootPath); os.IsNotExist(err) {
+		fmt.Printf("%+v", errors.Wrap(err, ""))
+		os.Exit(1)
+	}
+
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		fmt.Printf("%+v", errors.Wrap(err, ""))
 		os.Exit(1)
 	}
@@ -80,7 +96,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	openapi, err := openapi3.NewSwaggerLoader().LoadSwaggerFromData(data)
+	loc, err := url.Parse(rootDir)
+	if err != nil {
+		fmt.Printf("%+v", errors.Wrap(err, ""))
+		os.Exit(1)
+	}
+
+	openapi, err := openapi3.NewSwaggerLoader().LoadSwaggerFromDataWithPath(data, loc)
 	if err != nil {
 		fmt.Printf("%+v", errors.Wrap(err, ""))
 		os.Exit(1)
