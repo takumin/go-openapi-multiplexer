@@ -108,6 +108,10 @@ func main() {
 		os.Exit(1)
 	}
 
+	showInfo(openapi)
+}
+
+func showInfo(openapi *openapi3.Swagger) {
 	log.Printf("%-15s %s", "OpenAPI:", openapi.OpenAPI)
 	log.Printf("%-15s %s", "Title:", openapi.Info.Title)
 	if openapi.Info.Description != "" {
