@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )
@@ -79,5 +80,38 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Println(version)
+	openapi, err := openapi3.NewSwaggerLoader().LoadSwaggerFromData(data)
+	if err != nil {
+		fmt.Printf("%+v", errors.Wrap(err, ""))
+		os.Exit(1)
+	}
+
+	log.Printf("%-15s %s", "OpenAPI:", openapi.OpenAPI)
+	log.Printf("%-15s %s", "Title:", openapi.Info.Title)
+	if openapi.Info.Description != "" {
+		log.Printf("%-15s %s", "Description:", openapi.Info.Description)
+	}
+	if openapi.Info.TermsOfService != "" {
+		log.Printf("%-15s %s", "TermsOfService:", openapi.Info.TermsOfService)
+	}
+	if openapi.Info.Contact != nil {
+		if openapi.Info.Contact.Name != "" {
+			log.Printf("%-15s %s", "Contact->Name:", openapi.Info.Contact.Name)
+		}
+		if openapi.Info.Contact.Email != "" {
+			log.Printf("%-15s %s", "Contact->Email:", openapi.Info.Contact.Email)
+		}
+		if openapi.Info.Contact.URL != "" {
+			log.Printf("%-15s %s", "Contact->URL:", openapi.Info.Contact.URL)
+		}
+	}
+	if openapi.Info.License != nil {
+		if openapi.Info.License.Name != "" {
+			log.Printf("%-15s %s", "License->Name:", openapi.Info.License.Name)
+		}
+		if openapi.Info.License.URL != "" {
+			log.Printf("%-15s %s", "License->URL:", openapi.Info.License.URL)
+		}
+	}
+	log.Printf("%-15s %s", "Version:", openapi.Info.Version)
 }
