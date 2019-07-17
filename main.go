@@ -45,16 +45,19 @@ func main() {
 		os.Exit(1)
 	}
 
-	openapi := make(map[string]interface{})
+	var version struct {
+		Swagger string `json:"swagger,omitempty" yaml:"swagger,omitempty"`
+		OpenAPI string `json:"openapi,omitempty" yaml:"openapi,omitempty"`
+	}
 
 	switch filepath.Ext(filePath) {
 	case ".json":
-		if err := json.Unmarshal(data, &openapi); err != nil {
+		if err := json.Unmarshal(data, &version); err != nil {
 			fmt.Printf("%+v", errors.Wrap(err, ""))
 			os.Exit(1)
 		}
 	case ".yml", ".yaml":
-		if err := yaml.Unmarshal(data, &openapi); err != nil {
+		if err := yaml.Unmarshal(data, &version); err != nil {
 			fmt.Printf("%+v", errors.Wrap(err, ""))
 			os.Exit(1)
 		}
@@ -63,5 +66,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Println(openapi)
+	switch {
+	case version.Swagger == "" && version.OpenAPI == "":
+		fmt.Printf("%+v", errors.New("Invalid data"))
+		os.Exit(1)
+	case version.Swagger != "" && version.OpenAPI != "":
+		fmt.Printf("%+v", errors.New("Invalid data"))
+		os.Exit(1)
+	case version.Swagger != "":
+		// TODO: Support Swagger/OpenAPI 2.0
+		fmt.Printf("%+v", errors.New("Unsupported Swagger/OpenAPI 2.0"))
+		os.Exit(1)
+	}
+
+	log.Println(version)
 }
