@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -12,9 +11,12 @@ import (
 	"path/filepath"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func main() {
 	var (
@@ -97,13 +99,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	loc, err := url.Parse(rootDir)
+	loc, err := url.Parse(filePath)
 	if err != nil {
 		fmt.Printf("%+v", errors.Wrap(err, ""))
 		os.Exit(1)
 	}
 
-	openapi, err := openapi3.NewSwaggerLoader().LoadSwaggerFromDataWithPath(data, loc)
+	loader := openapi3.NewSwaggerLoader()
+	loader.IsExternalRefsAllowed = true
+
+	openapi, err := loader.LoadSwaggerFromDataWithPath(data, loc)
 	if err != nil {
 		fmt.Printf("%+v", errors.Wrap(err, ""))
 		os.Exit(1)
@@ -115,6 +120,20 @@ func main() {
 	}
 
 	showInfo(openapi)
+
+	for path, pathItem := range openapi.Paths {
+		for k, v := range pathItem.ExtensionProps.Extensions {
+			if k == "$ref" {
+				str, err := json.MarshalToString(v)
+				if err != nil {
+					fmt.Printf("%+v", errors.Wrap(err, ""))
+					os.Exit(1)
+				}
+
+				log.Println(path, k, str)
+			}
+		}
+	}
 }
 
 func showInfo(openapi *openapi3.Swagger) {
