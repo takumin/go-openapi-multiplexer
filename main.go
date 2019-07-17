@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -104,6 +105,11 @@ func main() {
 
 	openapi, err := openapi3.NewSwaggerLoader().LoadSwaggerFromDataWithPath(data, loc)
 	if err != nil {
+		fmt.Printf("%+v", errors.Wrap(err, ""))
+		os.Exit(1)
+	}
+
+	if err := openapi.Validate(context.Background()); err != nil {
 		fmt.Printf("%+v", errors.Wrap(err, ""))
 		os.Exit(1)
 	}
